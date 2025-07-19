@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic Tac Toe</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+      --accent: #8a2be2;
+      --cell-bg: #fff;
+      --cell-border: #ccc;
+    }
+
+    body.dark {
+      --bg: #1e1e2f;
+      --text: #ffffff;
+      --cell-bg: #2c2c3e;
+      --cell-border: #555;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: 0.3s;
+    }
+
+    header {
+      background: #3c3c4e;
+      color: white;
+      padding: 1rem;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      position: relative;
+      background: var(--cell-border);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .cell {
+      background-color: var(--cell-bg);
+      border: 2px solid var(--cell-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .cell:hover {
+      background-color: #f0f0f0;
+    }
+
+    body.dark .cell:hover {
+      background-color: #3c3c4e;
+    }
+
+    .info {
+      max-width: 300px;
+      text-align: center;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 10px 0;
+      background: #eee;
+      font-weight: bold;
+    }
+
+    .toggle-btn {
+      background: var(--accent);
+      color: white;
+    }
+
+    .line {
+      position: absolute;
+      height: 4px;
+      background-color: var(--accent);
+      transform-origin: left center;
+      z-index: 10;
+    }
+
+    .history {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: gray;
+    }
+
+    @media (max-width: 600px) {
+      .board {
+        grid-template-columns: repeat(3, 80px);
+        grid-template-rows: repeat(3, 80px);
+      }
+      .cell {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>My Tic Tac Toe</header>
+  <div class="container">
+    <div class="board" id="board"></div>
+    <div class="info">
+      <h2>Welcome to My TicTacToe</h2>
+      <p id="status">Your Turn: X</p>
+      <button class="btn" onclick="resetGame()">Reset</button><br>
+      <button class="btn toggle-btn" onclick="toggleDarkMode()">🌙 Toggle Dark/Light</button>
+      <p class="history" id="history">X-Wins: 0 | O-Wins: 0</p>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 My Tic Tac Toe. All rights reserved.
+  </footer>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const historyEl = document.getElementById('history');
+
+    let board = Array(9).fill('');
+    let currentPlayer = 'X';
+    let gameOver = false;
+
+    // Track X and O wins
+    let stats = {
+      xWins: 0,
+      oWins: 0
+    };
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      board.forEach((val, i) => {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.textContent = val;
+        cell.addEventListener('click', () => makeMove(i));
+        boardEl.appendChild(cell);
+      });
+    }
+
+    function makeMove(i) {
+      if (board[i] !== '' || gameOver) return;
+      board[i] = currentPlayer;
+      renderBoard();
+      const winner = checkWinner();
+      if (winner) {
+        statusEl.textContent = `${currentPlayer} Won!`;
+        drawWinLine(winner);
+        if (currentPlayer === 'X') stats.xWins++;
+        else stats.oWins++;
+        updateHistory();
+        gameOver = true;
+        return;
+      }
+      if (board.every(cell => cell)) {
+        statusEl.textContent = 'Draw!';
+        gameOver = true;
+        return;
+      }
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusEl.textContent = `Your Turn: ${currentPlayer}`;
+    }
+
+    function checkWinner() {
+      const winPatterns = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+      for (let [a,b,c] of winPatterns) {
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          return [a, b, c];
+        }
+      }
+      return null;
+    }
+
+    function drawWinLine([a,b,c]) {
+      const cells = boardEl.children;
+      const rectA = cells[a].getBoundingClientRect();
+      const rectC = cells[c].getBoundingClientRect();
+      const boardRect = boardEl.getBoundingClientRect();
+
+      const x1 = rectA.left + rectA.width / 2;
+      const y1 = rectA.top + rectA.height / 2;
+      const x2 = rectC.left + rectC.width / 2;
+      const y2 = rectC.top + rectC.height / 2;
+
+      const length = Math.hypot(x2 - x1, y2 - y1);
+      const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+
+      const line = document.createElement('div');
+      line.className = 'line';
+      line.style.width = `${length}px`;
+      line.style.transform = `translate(${x1 - boardRect.left}px, ${y1 - boardRect.top}px) rotate(${angle}deg)`;
+
+      boardEl.appendChild(line);
+    }
+
+    function updateHistory() {
+      historyEl.textContent = `X-Wins: ${stats.xWins} | O-Wins: ${stats.oWins}`;
+    }
+
+    function resetGame() {
+      board = Array(9).fill('');
+      currentPlayer = 'X';
+      gameOver = false;
+      statusEl.textContent = 'Your Turn: X';
+      renderBoard();
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+
+    renderBoard();
+  </script>
+</body>
+</html>
